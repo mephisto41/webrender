@@ -41,4 +41,4 @@ lazy_static = "0.1"
 git = "https://github.com/servo/core-text-rs"
 
 [target.x86_64-apple-darwin.dependencies]
-core-graphics = "0.1"
+core-graphics = "0.2.1"
