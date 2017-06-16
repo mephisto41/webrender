@@ -227,6 +227,7 @@ pub struct YamlFrameWriter {
     pipeline_id: Option<PipelineId>,
 
     dl_descriptor: Option<BuiltDisplayListDescriptor>,
+    serial: u32,
 }
 
 pub struct YamlFrameWriterReceiver {
@@ -270,6 +271,7 @@ impl YamlFrameWriter {
             pipeline_id: None,
 
             last_frame_written: u32::max_value(),
+            serial: 1,
         }
     }
 
@@ -350,7 +352,8 @@ impl YamlFrameWriter {
             let sb = s.into_bytes();
             let mut frame_file_name = self.frame_base.clone();
             let current_shown_frame = unsafe { CURRENT_FRAME_NUMBER };
-            frame_file_name.push(format!("frame-{}.yaml", current_shown_frame));
+            self.serial = self.serial + 1;
+            frame_file_name.push(format!("frame-{}-{}.yaml", current_shown_frame, self.serial));
             let mut file = File::create(&frame_file_name).unwrap();
             file.write_all(&sb).unwrap();
 

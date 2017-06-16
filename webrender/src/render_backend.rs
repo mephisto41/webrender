@@ -186,6 +186,7 @@ impl RenderBackend {
                                                display_list_descriptor,
                                                preserve_frame_state) => {
                             profile_scope!("SetDisplayList");
+                            println!("Morris pipeline id: {}, epoch: {}", pipeline_id.0, epoch.0);
                             let mut leftover_data = vec![];
                             let mut data;
                             loop {

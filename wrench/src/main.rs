@@ -313,7 +313,7 @@ fn main() {
             let h = s[x + 1..].parse::<u32>().expect("Invalid size height");
             DeviceUintSize::new(w, h)
         }
-    }).unwrap_or(DeviceUintSize::new(1920, 1080));
+    }).unwrap_or(DeviceUintSize::new(800, 1000));
     let is_headless = args.is_present("headless");
 
     let mut window = make_window(size,
@@ -374,7 +374,9 @@ fn main() {
     let mut do_loop = false;
 
     let queue_frames = thing.queue_frames();
+    // println!("Morris frame num {}", queue_frames);
     for _ in 0..queue_frames {
+        println!("Morris queue {}", queue_frames);
         let (width, height) = window.get_inner_size_pixels();
         let dim = DeviceUintSize::new(width, height);
         wrench.update(dim);

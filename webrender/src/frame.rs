@@ -337,6 +337,7 @@ impl Frame {
                                         .pre_mul(&transform)
                                         .pre_mul(&perspective);
 
+            // println!("Morris xxxxxx trans:{:?}", transform);
             let reference_frame_bounds = LayerRect::new(LayerPoint::zero(), bounds.size);
             clip_id = context.builder.push_reference_frame(Some(clip_id),
                                                            pipeline_id,

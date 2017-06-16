@@ -526,6 +526,7 @@ impl DisplayListBuilder {
             tile_spacing: tile_spacing,
             image_rendering: image_rendering,
         });
+        // println!("Morris push_image item:{:?} rect:{:?}", item, rect);
 
         self.push_item(item, rect);
     }
@@ -839,6 +840,7 @@ impl DisplayListBuilder {
                 mix_blend_mode: mix_blend_mode,
             }
         });
+        // println!("Morris push_sc: {:?} {:?} {:?}", item, bounds, filters);
 
         self.push_item(item, bounds);
         self.push_iter(&filters);

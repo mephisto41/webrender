@@ -460,6 +460,7 @@ impl YamlFrameReader {
             Some(_) => panic!("ImageRendering can be auto, crisp-edges, or pixelated -- got {:?}", item),
         };
         let clip = self.push_clip_region(&item["clip"], &bounds, clip_region, wrench);
+        println!("Morris handle image");
         self.builder().push_image(bounds, clip, stretch_size, tile_spacing, rendering, image_key);
     }
 
@@ -652,6 +653,7 @@ impl YamlFrameReader {
         let transform = yaml["transform"].as_matrix4d(&transform_origin).map(
             |transform| transform.into());
 
+        println!("Morris transform: {:?}", transform);
         // TODO(gw): Support perspective-origin.
         let perspective = match yaml["perspective"].as_force_f32() {
             Some(perspective) if perspective == 0.0 => None,
@@ -687,6 +689,7 @@ impl YamlFrameReader {
             self.add_display_list_items_from_yaml(wrench, &yaml["items"]);
         }
 
+        println!("Morris pop sc");
         self.builder().pop_stacking_context();
     }
 }

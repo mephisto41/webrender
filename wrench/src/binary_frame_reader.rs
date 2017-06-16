@@ -133,6 +133,7 @@ impl WrenchThing for BinaryFrameReader {
             let mut found_display_list = false;
             let mut found_pipeline = false;
             while let Ok(mut len) = self.file.read_u32::<LittleEndian>() {
+                // println!("Morris read len {}", len);
                 if len > 0 {
                     let mut buffer = vec![0; len as usize];
                     self.file.read_exact(&mut buffer).unwrap();
@@ -144,20 +145,23 @@ impl WrenchThing for BinaryFrameReader {
                     // (c) GenerateFrame that occurs *after* (a) and (b)
                     match msg {
                         ApiMsg::GenerateFrame(..) => {
+                            // println!("Morris GenerateFrame");
                             found_frame_marker = true;
                         }
                         ApiMsg::SetDisplayList(..) => {
+                            // println!("Morris SetDisplayList");
                             found_frame_marker = false;
                             found_display_list = true;
                         }
                         ApiMsg::SetRootPipeline(..) => {
+                            // println!("Morris SetRootPipeline");
                             found_frame_marker = false;
                             found_pipeline = true;
                         }
                         _ => {}
                     }
                     self.frame_data.push(Item::Message(msg));
-                    if found_frame_marker && found_display_list && found_pipeline {
+                    if found_frame_marker && found_display_list {
                         break;
                     }
                 } else {
@@ -187,6 +191,7 @@ impl WrenchThing for BinaryFrameReader {
                         }
                     }
                     Item::Data(buf) => {
+                        println!("Morris send_payload");
                         wrench.api.payload_sender.send_payload(Payload::from_data(&buf)).unwrap();
                     }
                 }
@@ -208,6 +213,7 @@ impl WrenchThing for BinaryFrameReader {
     // some tracking to avoid reuploading resources every run.  We
     // sort of try in should_skip_upload_msg, but this needs work.
     fn next_frame(&mut self) {
+        // println!("Morris next_frame {} frame_offset.len() {} {}", self.frame_num, self.frame_offsets.len(), self.frame_offsets[self.frame_num as usize]);
         if self.frame_exists(self.frame_num + 1) {
             self.frame_num += 1;
             self.frame_read = false;

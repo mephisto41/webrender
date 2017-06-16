@@ -17,6 +17,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use webrender_traits::*;
 use wrench::{Wrench, WrenchThing};
 use yaml_frame_reader::YamlFrameReader;
+use binary_frame_reader::BinaryFrameReader;
 
 pub struct ReftestOptions {
     // These override values that are lower.
@@ -188,6 +189,7 @@ pub struct ReftestHarness<'a> {
     wrench: &'a mut Wrench,
     window: &'a mut WindowWrapper,
     rx: Receiver<()>,
+    frame: u32,
 }
 impl<'a> ReftestHarness<'a> {
     pub fn new(wrench: &'a mut Wrench,
@@ -210,6 +212,7 @@ impl<'a> ReftestHarness<'a> {
             wrench: wrench,
             window: window,
             rx: rx,
+            frame: 5,
         }
     }
 
@@ -244,14 +247,18 @@ impl<'a> ReftestHarness<'a> {
 
         let window_size = DeviceUintSize::new(self.window.get_inner_size_pixels().0,
                                               self.window.get_inner_size_pixels().1);
+        let count = self.frame;
+        self.frame = self.frame + 1;
         let reference = match t.reference.extension().unwrap().to_str().unwrap() {
             "yaml" => self.render_yaml(t.reference.as_path(), window_size),
             "png" => self.load_image(t.reference.as_path(), ImageFormat::PNG),
+            "bin" => self.render_bin(t.reference.as_path(), window_size, count),
             other => panic!("Unknown reftest extension: {}", other),
         };
         // the reference can be smaller than the window size,
         // in which case we only compare the intersection
-        let test = self.render_yaml(t.test.as_path(), reference.size);
+        println!("Morris load test");
+        let test = self.render_bin(t.test.as_path(), reference.size, count + 1);
         let comparison = test.compare(&reference);
 
         match (&t.op, comparison) {
@@ -311,6 +318,45 @@ impl<'a> ReftestHarness<'a> {
         self.window.swap_buffers();
 
         let write_debug_images = false;
+        if write_debug_images {
+            let debug_path = filename.with_extension("yaml.png");
+            save_flipped(debug_path, &pixels, size);
+        }
+
+        ReftestImage {
+            data: pixels,
+            size: size,
+        }
+    }
+
+    fn render_bin(&mut self, filename: &Path, size: DeviceUintSize, count: u32) -> ReftestImage {
+        let mut reader = BinaryFrameReader::new(filename);
+        reader.do_frame(self.wrench);
+        for _ in 0..count {
+            reader.next_frame();
+            reader.do_frame(self.wrench);
+        }
+
+        // wait for the frame
+        for _ in 0..count + 3 {
+            self.rx.recv().unwrap();
+        }
+
+        let (width, height) = self.window.get_inner_size_pixels();
+        let dim = DeviceUintSize::new(width, height);
+        self.wrench.update(dim);
+        self.wrench.render();
+
+        let window_size = self.window.get_inner_size_pixels();
+        assert!(size.width <= window_size.0 && size.height <= window_size.1);
+
+        // taking the bottom left sub-rectangle
+        let rect = DeviceUintRect::new(DeviceUintPoint::new(0, window_size.1 - size.height),
+                                       size);
+        let pixels = self.wrench.renderer.read_pixels_rgba8(rect);
+        self.window.swap_buffers();
+
+        let write_debug_images = true;
         if write_debug_images {
             let debug_path = filename.with_extension("yaml.png");
             save_flipped(debug_path, &pixels, size);
