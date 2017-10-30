@@ -228,6 +228,7 @@ struct BlurTask {
     RectWithSize target_rect;
     float render_target_layer_index;
     float blur_radius;
+    float scale_factor;
     vec4 color;
 };
 
@@ -238,6 +239,7 @@ BlurTask fetch_blur_task(int address) {
         RectWithSize(task_data.data0.xy, task_data.data0.zw),
         task_data.data1.x,
         task_data.data1.y,
+        task_data.data1.z,
         task_data.data2
     );
 }
