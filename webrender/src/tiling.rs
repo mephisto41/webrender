@@ -346,6 +346,8 @@ impl AlphaRenderItem {
                     filter_mode,
                     amount,
                     z,
+                    0,
+                    0,
                 );
 
                 batch.push(PrimitiveInstance::from(instance));
@@ -356,6 +358,7 @@ impl AlphaRenderItem {
                 composite_op,
                 screen_origin,
                 z,
+                dest_rect,
             ) => {
                 let stacking_context = &ctx.stacking_context_store[stacking_context_index.0];
                 let src_task_address = render_tasks.get_task_address(src_id);
@@ -365,6 +368,11 @@ impl AlphaRenderItem {
                     BatchTextures::no_texture(),
                 );
                 let batch = batch_list.get_suitable_batch(key, &stacking_context.screen_bounds);
+                let dest_rect = if dest_rect.width > 0 && dest_rect.height > 0 {
+                    dest_rect
+                } else {
+                    render_tasks.get(src_id).get_dynamic_size()
+                };
 
                 let instance = CompositePrimitiveInstance::new(
                     task_address,
@@ -373,6 +381,8 @@ impl AlphaRenderItem {
                     screen_origin.x,
                     screen_origin.y,
                     z,
+                    dest_rect.width,
+                    dest_rect.height,
                 );
 
                 batch.push(PrimitiveInstance::from(instance));
@@ -399,6 +409,8 @@ impl AlphaRenderItem {
                     mode as u32 as i32,
                     0,
                     z,
+                    0,
+                    0,
                 );
 
                 batch.push(PrimitiveInstance::from(instance));
@@ -773,6 +785,8 @@ impl AlphaRenderItem {
                     gpu_address,
                     0,
                     z,
+                    0,
+                    0,
                 );
 
                 batch.push(PrimitiveInstance::from(instance));
