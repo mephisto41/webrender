@@ -285,6 +285,7 @@ pub enum RenderTaskKind {
     HorizontalBlur(BlurTask),
     Readback(DeviceIntRect),
     Alias(RenderTaskId),
+    Scaling(RenderTargetKind),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -505,6 +506,23 @@ impl RenderTask {
         blur_task_h
     }
 
+    pub fn new_scaling(
+        target_kind: RenderTargetKind,
+        src_task_id: RenderTaskId,
+        target_size: DeviceIntSize,
+    ) -> RenderTask {
+        RenderTask {
+            cache_key: None,
+            children: vec![src_task_id],
+            location: RenderTaskLocation::Dynamic(None, target_size),
+            kind: RenderTaskKind::Scaling(target_kind),
+            clear_mode: match target_kind {
+                RenderTargetKind::Color => ClearMode::Transparent,
+                RenderTargetKind::Alpha => ClearMode::One,
+            },
+        }
+    }
+
     pub fn as_alpha_batch_mut<'a>(&'a mut self) -> &'a mut AlphaRenderTask {
         match self.kind {
             RenderTaskKind::Alpha(ref mut task) => task,
@@ -513,7 +531,8 @@ impl RenderTask {
             RenderTaskKind::VerticalBlur(..) |
             RenderTaskKind::Readback(..) |
             RenderTaskKind::HorizontalBlur(..) |
-            RenderTaskKind::Alias(..) => unreachable!(),
+            RenderTaskKind::Alias(..) |
+            RenderTaskKind::Scaling(..) => unreachable!(),
         }
     }
 
@@ -525,7 +544,8 @@ impl RenderTask {
             RenderTaskKind::VerticalBlur(..) |
             RenderTaskKind::Readback(..) |
             RenderTaskKind::HorizontalBlur(..) |
-            RenderTaskKind::Alias(..) => unreachable!(),
+            RenderTaskKind::Alias(..) |
+            RenderTaskKind::Scaling(..) => unreachable!(),
         }
     }
 
@@ -619,7 +639,8 @@ impl RenderTask {
                     ],
                 }
             }
-            RenderTaskKind::Readback(..) => {
+            RenderTaskKind::Readback(..) |
+            RenderTaskKind::Scaling(..) => {
                 let (target_rect, target_index) = self.get_target_rect();
                 RenderTaskData {
                     data: [
@@ -663,7 +684,8 @@ impl RenderTask {
             RenderTaskKind::VerticalBlur(..) |
             RenderTaskKind::HorizontalBlur(..) |
             RenderTaskKind::Picture(..) |
-            RenderTaskKind::Alias(..) => {
+            RenderTaskKind::Alias(..) |
+            RenderTaskKind::Scaling(..) => {
                 panic!("bug: inflate only supported for alpha tasks");
             }
         }
@@ -701,6 +723,10 @@ impl RenderTask {
                 task_info.target_kind
             }
 
+            RenderTaskKind::Scaling(target_kind) => {
+                target_kind
+            }
+
             RenderTaskKind::Picture(ref task_info) => {
                 task_info.target_kind
             }
@@ -723,7 +749,8 @@ impl RenderTask {
             RenderTaskKind::Picture(..) |
             RenderTaskKind::VerticalBlur(..) |
             RenderTaskKind::Readback(..) |
-            RenderTaskKind::HorizontalBlur(..) => false,
+            RenderTaskKind::HorizontalBlur(..) |
+            RenderTaskKind::Scaling(..) => false,
 
             RenderTaskKind::CacheMask(..) => true,
 
